@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { getEmails, getAnalytics, saveReply, updateStatus, seedDemo } from './api'
+import DOMPurify from 'dompurify';
 import { Doughnut } from 'react-chartjs-2'
 import { Chart, ArcElement, Tooltip, Legend } from 'chart.js'
 Chart.register(ArcElement, Tooltip, Legend)
@@ -134,7 +135,8 @@ export default function App() {
                 </div>
               </div>
               <hr/>
-              <pre>{e.body}</pre>
+              <pre dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(e.body) }} />
+
 
               <div className="row g-3 mt-2">
                 <div className="col-md-4">
@@ -148,7 +150,7 @@ export default function App() {
 
                 <div className="col-md-8">
                   <label className="form-label">AI Draft Reply</label>
-                  <textarea id={`reply-${e.id}`} defaultValue={e.draftReply || ''}></textarea>
+                  <textarea id={`reply-${e.id}`} value={e.draftReply}></textarea>
                   <div className="d-flex gap-2 mt-2">
                     <button className="btn btn-primary btn-sm" onClick={()=>onSaveReply(e.id)}>Save & Approve</button>
                     {e.status !== 'Resolved' && <button className="btn btn-outline-success btn-sm" onClick={()=>onResolve(e.id)}>Mark Resolved</button>}

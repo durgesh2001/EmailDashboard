@@ -1,7 +1,9 @@
 package com.emailassistant.controller;
 
 import com.emailassistant.model.Email;
+import com.emailassistant.repository.EmailRepository;
 import com.emailassistant.service.EmailService;
+import com.emailassistant.service.GeminiNlpService;
 import com.emailassistant.service.MailFetchService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +20,9 @@ public class EmailController {
 
     private final EmailService service;
     private final MailFetchService mailFetchService;
+    private final EmailRepository emailRepo;
+    private final GeminiNlpService geminiNlpService;
+
     // DTO for creating a new email (client can POST minimal payload)
     public static class CreateEmailRequest {
         public String sender;
@@ -82,7 +87,9 @@ public class EmailController {
     @GetMapping("/fetch")
     public String fetchEmails() {
         try {
+            System.out.println("fetch fn execute ");
             mailFetchService.fetchAndSaveEmails();
+            System.out.println("fetch fn executed now ");
             return "Emails fetched successfully";
         } catch (Exception e) {
             e.printStackTrace();
@@ -90,5 +97,14 @@ public class EmailController {
         }
     }
 
+    @PostMapping("/emails/{id}/draft")
+    public ResponseEntity<String> generateDraft(@PathVariable Long id) {
+        return emailRepo.findById(id)
+                .map(email -> {
+                    String draft = geminiNlpService.generateDraftReply(email);
+                    return ResponseEntity.ok(draft);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
 
 }

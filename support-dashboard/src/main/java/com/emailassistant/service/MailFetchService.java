@@ -31,15 +31,18 @@ public class MailFetchService {
     private String protocol;
 
     private final EmailRepository emailRepository;
+    private final GeminiNlpService geminiNlpService;
 
-    public MailFetchService(EmailRepository emailRepository) {
+    public MailFetchService(EmailRepository emailRepository, GeminiNlpService geminiNlpService) {
         this.emailRepository = emailRepository;
+        this.geminiNlpService = geminiNlpService;
     }
 
     public void fetchAndSaveEmails() throws Exception {
         // Setup IMAP session
         Properties props = new Properties();
         props.put("mail.store.protocol", protocol);
+        System.out.println("entering fetch and save");
 
         Session session = Session.getInstance(props);
         Store store = session.getStore(protocol);
@@ -81,8 +84,17 @@ public class MailFetchService {
                         .approved(false)
                         .filtered(true) // mark as filtered since subject matched
                         .build();
-
+                System.out.println("Application is start ");
                 emailRepository.save(email);
+                System.out.println("Application is finish ");
+                // generate draft using Gemini (non-blocking considerations noted below)
+                try {
+                    System.out.println("Inside Api ");
+                    geminiNlpService.generateDraftReply(email);
+                } catch (Exception ex) {
+                    // log and continue
+                    ex.printStackTrace();
+                }
             }
         }
 
